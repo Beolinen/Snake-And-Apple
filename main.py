@@ -10,9 +10,11 @@ import numpy as np
 from PIL import ImageTk,Image
 
 # Define useful parameters
-size_of_board = 600
-rows = 10
-cols = 10
+size_of_board = 800
+rows = 15
+cols = 15
+#size_of_board_x = size_of_board*cols
+#size_of_board_y = size_of_board*rows
 DELAY = 100
 snake_initial_length = 3
 symbol_size = (size_of_board / 3 - size_of_board / 8) / 2
@@ -39,15 +41,19 @@ class SnakeAndApple:
         self.window.bind("<Button-1>", self.mouse_input)
         self.play_again()
         self.begin = False
+        self.started = True # True if the game is about to start
 
     def initialize_board(self):
         self.board = []
+        self.borders = []
         self.apple_obj = []
         self.old_apple_cell = []
 
         for i in range(rows):
             for j in range(cols):
                 self.board.append((i, j))
+                if i == 0 or i == rows-1 or j == 0 or j == cols-1:
+                    self.borders.append((i, j))
 
         for i in range(rows):
             self.canvas.create_line(
@@ -80,6 +86,7 @@ class SnakeAndApple:
         self.place_apple()
         self.display_snake(mode="complete")
         self.begin_time = time.time()
+        self.started = True
 
     def mainloop(self):
         while True:
@@ -96,7 +103,7 @@ class SnakeAndApple:
     # The modules required to draw required game based object on canvas
     # ------------------------------------------------------------------
     def display_gameover(self):
-        score = len(self.snake)
+        score = len(self.snake) - snake_initial_length
         self.canvas.delete("all")
         score_text = "Scores \n"
 
@@ -119,6 +126,7 @@ class SnakeAndApple:
             text=score_text,
         )
         time_spent = str(np.round(time.time() - self.begin_time, 1)) + 'sec'
+        #fixa timern
         self.canvas.create_text(
             size_of_board / 2,
             3 * size_of_board / 4,
@@ -137,10 +145,10 @@ class SnakeAndApple:
 
     def place_apple(self):
         # Place apple randomly anywhere except at the cells occupied by snake
-        unoccupied_cels = set(self.board) - set(self.snake)
+        unoccupied_cels = set(self.board) - set(self.snake)  - set(self.borders)
         self.apple_cell = random.choice(list(unoccupied_cels))
-        row_h = int(size_of_board / rows)
-        col_w = int(size_of_board / cols)
+        row_h = float(size_of_board / rows)
+        col_w = float(size_of_board / cols)
         x1 = self.apple_cell[0] * row_h
         y1 = self.apple_cell[1] * col_w
         x2 = x1 + row_h
@@ -170,8 +178,8 @@ class SnakeAndApple:
         else:
             # only update head
             cell = self.snake[-1]
-            row_h = int(size_of_board / rows)
-            col_w = int(size_of_board / cols)
+            row_h = float(size_of_board / rows)
+            col_w = float(size_of_board / cols)
             x1 = cell[0] * row_h
             y1 = cell[1] * col_w
             x2 = x1 + row_h
@@ -246,9 +254,14 @@ class SnakeAndApple:
             return False
 
     def mouse_input(self, event):
-        self.play_again()
+        if self.crashed:
+            self.play_again()
 
     def key_input(self, event):
+        # Check if the game is about to start, and start the timer
+        if self.started:
+            self.begin_time = time.time()
+            self.started = False
         if not self.crashed:
             key_pressed = event.keysym
             # Check if the pressed key is a valid key
@@ -256,7 +269,6 @@ class SnakeAndApple:
                 # print(key_pressed)
                 self.begin = True
                 self.last_key = key_pressed
-
 
 game_instance = SnakeAndApple()
 game_instance.mainloop()
