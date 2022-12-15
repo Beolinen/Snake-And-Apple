@@ -11,8 +11,8 @@ from PIL import ImageTk,Image
 
 # Define useful parameters
 size_of_board = 800
-rows = 15
-cols = 15
+rows = 30
+cols = 30
 #size_of_board_x = size_of_board*cols
 #size_of_board_y = size_of_board*rows
 DELAY = 100
@@ -46,8 +46,10 @@ class SnakeAndApple:
     def initialize_board(self):
         self.board = []
         self.borders = []
-        self.apple_obj = []
-        self.old_apple_cell = []
+        self.apple1_obj = []
+        self.old_apple1_cell = []
+        self.apple2_obj = []
+        self.old_apple2_cell = []
 
         for i in range(rows):
             for j in range(cols):
@@ -83,7 +85,8 @@ class SnakeAndApple:
         self.canvas.delete("all")
         self.initialize_board()
         self.initialize_snake()
-        self.place_apple()
+        self.place_apple1()
+        self.place_apple2()
         self.display_snake(mode="complete")
         self.begin_time = time.time()
         self.started = True
@@ -143,17 +146,30 @@ class SnakeAndApple:
             text=score_text,
         )
 
-    def place_apple(self):
+    def place_apple1(self):
         # Place apple randomly anywhere except at the cells occupied by snake
         unoccupied_cels = set(self.board) - set(self.snake)  - set(self.borders)
-        self.apple_cell = random.choice(list(unoccupied_cels))
+        self.apple1_cell = random.choice(list(unoccupied_cels))
         row_h = float(size_of_board / rows)
         col_w = float(size_of_board / cols)
-        x1 = self.apple_cell[0] * row_h
-        y1 = self.apple_cell[1] * col_w
+        x1 = self.apple1_cell[0] * row_h
+        y1 = self.apple1_cell[1] * col_w
         x2 = x1 + row_h
         y2 = y1 + col_w
-        self.apple_obj = self.canvas.create_rectangle(
+        self.apple1_obj = self.canvas.create_rectangle(
+            x1, y1, x2, y2, fill=RED_COLOR_LIGHT, outline=BLUE_COLOR,
+        )
+    def place_apple2(self):
+        # Place apple randomly anywhere except at the cells occupied by snake
+        unoccupied_cels = set(self.board) - set(self.snake)  - set(self.borders)
+        self.apple2_cell = random.choice(list(unoccupied_cels))
+        row_h = float(size_of_board / rows)
+        col_w = float(size_of_board / cols)
+        x1 = self.apple2_cell[0] * row_h
+        y1 = self.apple2_cell[1] * col_w
+        x2 = x1 + row_h
+        y2 = y1 + col_w
+        self.apple2_obj = self.canvas.create_rectangle(
             x1, y1, x2, y2, fill=RED_COLOR_LIGHT, outline=BLUE_COLOR,
         )
 
@@ -189,9 +205,25 @@ class SnakeAndApple:
                     x1, y1, x2, y2, fill=BLUE_COLOR, outline=RED_COLOR,
                 )
             )
-            if self.snake[0] == self.old_apple_cell:
-                self.snake.insert(0, self.old_apple_cell)
-                self.old_apple_cell = []
+            if self.snake[0] == self.old_apple1_cell:
+                self.snake.insert(0, self.old_apple1_cell)
+                self.old_apple1_cell = []
+                tail = self.snake[0]
+                row_h = int(size_of_board / rows)
+                col_w = int(size_of_board / cols)
+                x1 = tail[0] * row_h
+                y1 = tail[1] * col_w
+                x2 = x1 + row_h
+                y2 = y1 + col_w
+                self.snake_objects.insert(
+                    0,
+                    self.canvas.create_rectangle(
+                        x1, y1, x2, y2, fill=BLUE_COLOR, outline=RED_COLOR
+                    ),
+                )
+            if self.snake[0] == self.old_apple2_cell:
+                self.snake.insert(0, self.old_apple2_cell)
+                self.old_apple2_cell = []
                 tail = self.snake[0]
                 row_h = int(size_of_board / rows)
                 col_w = int(size_of_board / cols)
@@ -215,7 +247,7 @@ class SnakeAndApple:
         # Check if it hit the wall or its own body
         tail = self.snake[0]
         head = self.snake[-1]
-        if tail != self.old_apple_cell:
+        if tail != self.old_apple1_cell or self.old_apple2_cell:
             self.snake.pop(0)
         if key == "Left":
             self.snake.append((head[0] - 1, head[1]))
@@ -236,11 +268,17 @@ class SnakeAndApple:
         ):
             # Hit the wall / Hit on body
             self.crashed = True
-        elif self.apple_cell == head:
+        elif self.apple1_cell == head:
             # Got the apple
-            self.old_apple_cell = self.apple_cell
-            self.canvas.delete(self.apple_obj)
-            self.place_apple()
+            self.old_apple1_cell = self.apple1_cell
+            self.canvas.delete(self.apple1_obj)
+            self.place_apple1()
+            self.display_snake()
+        elif self.apple2_cell == head:
+            # Got the apple
+            self.old_apple2_cell = self.apple2_cell
+            self.canvas.delete(self.apple2_obj)
+            self.place_apple2()
             self.display_snake()
         else:
             self.snake_heading = key
